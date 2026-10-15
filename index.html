@@ -194,8 +194,8 @@ const winners=scores.map((value,i)=>value===high?i:-1).filter(i=>i!==-1);
 const bestSecondary=Math.max(...winners.map(i=>secondary[i]));
 const finalists=winners.filter(i=>secondary[i]===bestSecondary);
 // Exact ties are genuinely ambiguous: use a stable default, not a single question.
-const index=finalists[0];const p=profiles[index];$('quiz').classList.add('hidden');$('result').classList.remove('hidden');$('next-chapter').classList.remove('hidden');$('daylabel').textContent='Character Unlocked';$('player').src=sprites[index];$('portrait').src=sprites[index];$('intro').textContent='✦ CHARACTER UNLOCKED! ✦';$('desc').textContent=p.desc;$('nameplate').textContent=p.name;$('skill').textContent=p.skill;$('skilltext').textContent=p.skilltext;$('quest').textContent=p.quest;$('questtext').textContent=p.questtext;$('tip').textContent='“'+p.tip+'”';$('hass').textContent=p.hass;$('hasstext').textContent=p.hasstext;$('next-preview').textContent=`${p.name}: ${p.tagline} Next, your character will appear in the student video and the scrolling UQ campus story, where senior student NPCs share practical tips.`;const scoringNote=document.getElementById('scoring-explanation');if(scoringNote)scoringNote.textContent='Your character is based on all six answers, not just your final choice. This is a playful self-discovery quiz, not a scientific personality assessment.';window.scrollTo({top:0,behavior:'smooth'})}
-function restart(){step=0;answers=Array(6).fill(null);$('result').classList.add('hidden');$('next-chapter').classList.add('hidden');$('quiz').classList.remove('hidden');$('daylabel').textContent='Spring · Day 01';render();window.scrollTo({top:0,behavior:'smooth'})}
+const index=finalists[0];const p=profiles[index];$('quiz').classList.add('hidden');$('result').classList.remove('hidden');$('next-chapter').classList.remove('hidden');$('daylabel').textContent='Character Unlocked';$('player').src=sprites[index];$('portrait').src=sprites[index];$('intro').textContent='✦ CHARACTER UNLOCKED! ✦';$('desc').textContent=p.desc;$('nameplate').textContent=p.name;$('skill').textContent=p.skill;$('skilltext').textContent=p.skilltext;$('quest').textContent=p.quest;$('questtext').textContent=p.questtext;$('tip').textContent='“'+p.tip+'”';$('hass').textContent=p.hass;$('hasstext').textContent=p.hasstext;$('next-preview').textContent=`${p.name}: ${p.tagline} Next, your character will appear in the student video and the scrolling UQ campus story, where senior student NPCs share practical tips.`;const scoringNote=document.getElementById('scoring-explanation');if(scoringNote)scoringNote.textContent='Your character is based on all six answers, not just your final choice. This is a playful self-discovery quiz, not a scientific personality assessment.';window.scrollTo({top:0,behavior:'smooth'});window.parent.postMessage({source:'uq-hass-quiz',type:'UQ_QUIZ_RESULT'},'*')}
+function restart(){window.parent.postMessage({source:'uq-hass-quiz',type:'UQ_QUIZ_QUESTIONS'},'*');step=0;answers=Array(6).fill(null);$('result').classList.add('hidden');$('next-chapter').classList.add('hidden');$('quiz').classList.remove('hidden');$('daylabel').textContent='Spring · Day 01';render();window.scrollTo({top:0,behavior:'smooth'})}
 function continueJourney(){document.getElementById('next-chapter').scrollIntoView({behavior:'smooth',block:'center'})}
 render();
 
@@ -214,4 +214,29 @@ function startRealWalk(characterIndex){
   walker.style.animation='none';void walker.offsetWidth;walker.style.animation='';
   walkTimer=setInterval(()=>{frame=(frame+1)%6;walker.src=walkFrames[characterIndex][frame]},105);
 }
-</script></body></html>
+</script>
+<script id="uq-responsive-iframe-height">
+(function(){
+  let lastHeight=0;
+  function measure(){
+    const main=document.querySelector('main.wrap');
+    if(!main)return;
+    // offsetHeight is independent of the iframe's internal scroll position.
+    const rect=main.getBoundingClientRect();
+    const height=Math.ceil(Math.max(main.offsetTop+main.offsetHeight, main.scrollHeight+main.offsetTop)+32);
+    if(Math.abs(height-lastHeight)<2)return;
+    lastHeight=height;
+    if(window.parent!==window){
+      window.parent.postMessage({source:'uq-hass-quiz',type:'UQ_QUIZ_HEIGHT',height:height},'*');
+    }
+  }
+  window.addEventListener('load',measure);
+  window.addEventListener('resize',measure);
+  if('ResizeObserver' in window)new ResizeObserver(measure).observe(document.querySelector('main.wrap'));
+  if('MutationObserver' in window)new MutationObserver(function(){requestAnimationFrame(measure)}).observe(document.querySelector('main.wrap'),{childList:true,subtree:true,attributes:true,characterData:true});
+  document.addEventListener('click',function(){requestAnimationFrame(measure);setTimeout(measure,120);setTimeout(measure,500)},true);
+  setInterval(measure,700);
+  measure();
+})();
+</script>
+</body></html>
